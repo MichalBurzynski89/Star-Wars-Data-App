@@ -11,7 +11,24 @@ function Character(name, height, mass, hairColor, skinColor, eyeColor, birthYear
     this.gender = gender;
 }
 
-document.getElementById('searchInputForm').addEventListener('submit', function (e) {
+Character.prototype.getData = function (data) {
+    return fetch(data)
+        .then(res => {
+            if (res.ok) {
+                return res.json();
+            } else {
+                throw new Error('The connection ended with status ' + res.status + ': ' + res.statusText);
+            }
+        })
+        .then(resData => {
+            return resData.name;
+        })
+        .catch(error => {
+            return error;
+        });
+}
+
+const searchForCharacter = function (e) {
     e.preventDefault();
     const inputValue = document.getElementById('searchInput').value;
 
@@ -24,12 +41,14 @@ document.getElementById('searchInputForm').addEventListener('submit', function (
             let output = '';
 
             const dataList = this.response.results;
-            dataList.forEach(listItem => {
+            dataList.forEach(async listItem => {
                 const character = new Character(listItem.name, listItem.height, listItem.mass, listItem.hair_color, listItem.skin_color, listItem.eye_color, listItem.birth_year, listItem.gender);
+                const planet = await character.getData(listItem.homeworld);
+                const species = await character.getData(listItem.species);
 
                 output += `<div class="col-md-6 mb-3">
                                 <div class="card bg-warning text-uppercase font-weight-bold">
-                                    <div class="card-header py-3">Name: ${character.name}</div>
+                                    <div class="card-header py-3">${character.name}</div>
                                     <ul class="list-group list-group-flush">
                                         <li class="list-group-item">Height: ${character.height}</li>
                                         <li class="list-group-item">Mass: ${character.mass}</li>
@@ -38,13 +57,15 @@ document.getElementById('searchInputForm').addEventListener('submit', function (
                                         <li class="list-group-item">Eye color: ${character.eyeColor}</li>
                                         <li class="list-group-item">Birth year: ${character.birthYear}</li>
                                         <li class="list-group-item">Gender: ${character.gender}</li>
+                                        <li class="list-group-item">Homeworld: ${planet}</li>
+                                        <li class="list-group-item">Species: ${species}</li>
                                     </ul>
                                 </div>
                             </div>`;
-                document.querySelector('.col-lg-8 .row').innerHTML = output;
+                document.getElementById('displayData').innerHTML = output;
             });
         } else {
-            console.log('The connection ended with status ' + this.statusText);
+            console.log('The connection ended with status ' + this.status + ': ' + this.statusText);
         }
     });
 
@@ -55,4 +76,6 @@ document.getElementById('searchInputForm').addEventListener('submit', function (
     xhr.send();
 
     document.getElementById('searchInput').value = '';
-});
+};
+
+document.getElementById('searchInputForm').addEventListener('submit', searchForCharacter);
